@@ -1,42 +1,34 @@
-from ssl import Options
 import justpy as jp
+import pandas as pd
+from datetime import datetime as dt
 
 chart = '''
 {
     chart: {
         type: 'spline',
-        inverted: true
+        inverted: false
     },
     title: {
-        text: 'Atmosphere Temperature by Altitude'
-    },
-    subtitle: {
-        text: 'According to the Standard Atmosphere Model'
+        text: 'Month Average Rating'
     },
     xAxis: {
         reversed: false,
         title: {
             enabled: true,
-            text: 'Altitude'
+            text: 'Date'
         },
         labels: {
-            format: '{value} km'
-        },
-        accessibility: {
-            rangeDescription: 'Range: 0 to 80 km.'
+            format: '{value}'
         },
         maxPadding: 0.05,
         showLastLabel: true
     },
     yAxis: {
         title: {
-            text: 'Temperature'
+            text: 'Rating'
         },
         labels: {
-            format: '{value}°'
-        },
-        accessibility: {
-            rangeDescription: 'Range: -90°C to 20°C.'
+            format: '{value}'
         },
         lineWidth: 2
     },
@@ -45,7 +37,7 @@ chart = '''
     },
     tooltip: {
         headerFormat: '<b>{series.name}</b><br/>',
-        pointFormat: '{point.x} km: {point.y}°C'
+        pointFormat: '{point.y}'
     },
     plotOptions: {
         spline: {
@@ -55,18 +47,26 @@ chart = '''
         }
     },
     series: [{
-        name: 'Temperature',
+        name: 'Rating',
         data: [[0, 15], [10, -50], [20, -56.5], [30, -46.5], [40, -22.1],
             [50, -2.5], [60, -27.7], [70, -55.7], [80, -76.5]]
     }]
 }
 '''
+def create_data():
+    data = pd.read_csv('reviews.csv', parse_dates=['Timestamp'])
+    data['Month'] = data['Timestamp'].dt.strftime("%Y-%m")
+    month_average = data.groupby(['Month']).mean()
+    return month_average
+
 
 def app():
     wp = jp.QuasarPage()
-    h1 = jp.QDiv(a=wp, text="Simple Header", classes="text-h3 text-center q-pa-md")
-    p1 = jp.QDiv(a=wp, text="This is a siple paragraph page", classes="text-body1")
+    h1 = jp.QDiv(a=wp, text="Python course rating", classes="text-h3 text-center q-pa-md")
     hc = jp.HighCharts(a=wp, options=chart)
+    data = create_data()
+    hc.options.xAxis.categories = list(data.index)
+    hc.options.series[0].data = list(data['Rating'])
     return wp
 
 jp.justpy(app)
